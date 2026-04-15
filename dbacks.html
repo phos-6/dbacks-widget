@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D-backs Game Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sedona: #A71930;
+    --sand: #E3C68B;
+    --black: #0A0A0A;
+    --charcoal: #1A1A1A;
+    --mid: #2A2A2A;
+    --dim: #3A3A3A;
+    --muted: #888;
+    --white: #F5F0E8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* Header */
+  .header {
+    background: var(--sedona);
+    padding: 14px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--sand);
+    line-height: 1;
+  }
+
+  .header-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .refresh-btn {
+    margin-left: auto;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+
+  .refresh-btn:active { opacity: 0.7; }
+
+  /* Score card */
+  .score-card {
+    background: var(--charcoal);
+    margin: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--dim);
+  }
+
+  .game-status-bar {
+    background: var(--sedona);
+    padding: 6px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    display: inline-block;
+    margin-right: 6px;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .teams-row {
+    display: flex;
+    align-items: center;
+    padding: 20px 20px 16px;
+    gap: 0;
+  }
+
+  .team-block {
+    flex: 1;
+  }
+
+  .team-block.away { text-align: left; }
+  .team-block.home { text-align: right; }
+
+  .team-abbr {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+
+  .team-abbr.az { color: var(--sand); }
+  .team-abbr.opp { color: var(--muted); }
+
+  .team-name {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  .score-center {
+    text-align: center;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+
+  .score-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    letter-spacing: 4px;
+    line-height: 1;
+    color: var(--white);
+  }
+
+  .score-display .winning { color: var(--sand); }
+
+  .inning-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* Live situation */
+  .situation {
+    border-top: 1px solid var(--dim);
+    padding: 14px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .sit-block {
+    text-align: center;
+  }
+
+  .sit-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .sit-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--white);
+  }
+
+  /* Bases diamond */
+  .bases-diamond {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--dim);
+    border-radius: 2px;
+    position: absolute;
+    transform: rotate(45deg);
+    background: var(--charcoal);
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .base.on {
+    background: var(--sand);
+    border-color: var(--sand);
+  }
+
+  .base-second { top: 0; left: 50%; transform: translateX(-50%) rotate(45deg); }
+  .base-third { bottom: 8px; left: 2px; }
+  .base-first { bottom: 8px; right: 2px; }
+
+  .outs-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .out-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--dim);
+    background: var(--charcoal);
+    transition: background 0.3s;
+  }
+
+  .out-dot.active {
+    background: var(--sedona);
+    border-color: var(--sedona);
+  }
+
+  /* Matchup */
+  .matchup {
+    border-top: 1px solid var(--dim);
+    padding: 14px 20px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .matchup-item {
+    flex: 1;
+  }
+
+  .matchup-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .matchup-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .matchup-detail {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* Section headers */
+  .section-header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--sand);
+    padding: 20px 16px 8px;
+  }
+
+  /* Linescore */
+  .linescore-wrap {
+    margin: 0 16px;
+    background: var(--charcoal);
+    border-radius: 12px;
+    border: 1px solid var(--dim);
+    overflow: hidden;
+  }
+
+  .linescore-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .linescore {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    min-width: 500px;
+  }
+
+  .linescore th {
+    padding: 8px 10px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--dim);
+    background: var(--mid);
+    font-weight: 400;
+  }
+
+  .linescore td {
+    padding: 10px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--dim);
+    color: var(--white);
+  }
+
+  .linescore tr:last-child td { border-bottom: none; }
+
+  .linescore .team-col {
+    text-align: left;
+    font-weight: 500;
+    padding-left: 16px;
+    position: sticky;
+    left: 0;
+    background: var(--charcoal);
+    z-index: 1;
+  }
+
+  .linescore .az-row .team-col { color: var(--sand); }
+
+  .linescore .total-col {
+    font-weight: 700;
+    border-left: 1px solid var(--dim);
+    color: var(--sand);
+  }
+
+  .linescore .current-inn {
+    background: rgba(163, 25, 48, 0.15);
+  }
+
+  /* Scoring plays */
+  .plays-list {
+    margin: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .play-card {
+    background: var(--charcoal);
+    border-radius: 10px;
+    border: 1px solid var(--dim);
+    padding: 12px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .play-inn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--sedona);
+    line-height: 1;
+    min-width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .play-body { flex: 1; }
+
+  .play-half {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .play-desc {
+    font-size: 13px;
+    color: var(--white);
+    line-height: 1.4;
+  }
+
+  .play-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--sand);
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  /* Next game */
+  .next-game {
+    margin: 0 16px;
+    background: var(--charcoal);
+    border-radius: 12px;
+    border: 1px solid var(--dim);
+    padding: 20px;
+    text-align: center;
+  }
+
+  .next-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .next-matchup {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    color: var(--white);
+  }
+
+  .next-matchup .az { color: var(--sand); }
+
+  .next-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* Loading/error */
+  .state-msg {
+    text-align: center;
+    padding: 60px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .last-updated {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    padding: 20px 0 0;
+    letter-spacing: 1px;
+  }
+
+  .scheduled-card {
+    margin: 0 16px;
+    background: var(--charcoal);
+    border-radius: 12px;
+    border: 1px solid var(--dim);
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .sched-tip { color: var(--muted); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo">D&#x25C6;BACKS</div>
+    <div class="header-sub">Game Center</div>
+  </div>
+  <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+</div>
+
+<div id="app"><div class="state-msg">Loading game data...</div></div>
+
+<div class="last-updated" id="updated"></div>
+
+<script>
+const MLB_BASE = 'https://statsapi.mlb.com/api/v1';
+const DBACKS_ID = 109;
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+function fmt(dt) {
+  return new Date(dt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+}
+
+function fmtDate(dt) {
+  return new Date(dt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+async function loadData() {
+  document.getElementById('updated').textContent = '';
+  const app = document.getElementById('app');
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const schedRes = await fetch(`${MLB_BASE}/schedule?sportId=1&teamId=${DBACKS_ID}&date=${today}&hydrate=linescore,scoringplays`);
+    const schedData = await schedRes.json();
+
+    const dates = schedData.dates || [];
+    const todayGames = dates.length > 0 ? dates[0].games : [];
+
+    // Find today's game
+    const game = todayGames[0];
+
+    if (!game) {
+      // No game today - show next scheduled
+      await renderNoGame(app);
+      return;
+    }
+
+    const status = game.status.abstractGameState; // Preview, Live, Final
+
+    if (status === 'Preview') {
+      renderScheduled(app, game);
+    } else {
+      await renderGame(app, game);
+    }
+
+    const now = new Date();
+    document.getElementById('updated').textContent =
+      `Updated ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })}`;
+
+    // Auto-refresh every 45s if live
+    if (status === 'Live') {
+      setTimeout(loadData, 45000);
+    }
+
+  } catch (e) {
+    app.innerHTML = `<div class="state-msg">Couldn't load game data.<br>Check your connection and refresh.</div>`;
+    console.error(e);
+  }
+}
+
+function getTeamInfo(game) {
+  const away = game.teams.away;
+  const home = game.teams.home;
+  const isHome = home.team.id === DBACKS_ID;
+  const az = isHome ? home : away;
+  const opp = isHome ? away : home;
+  return { az, opp, isHome };
+}
+
+const ABBRS = {'Arizona Diamondbacks':'AZ','Atlanta Braves':'ATL','Baltimore Orioles':'BAL','Boston Red Sox':'BOS','Chicago Cubs':'CHC','Chicago White Sox':'CWS','Cincinnati Reds':'CIN','Cleveland Guardians':'CLE','Colorado Rockies':'COL','Detroit Tigers':'DET','Houston Astros':'HOU','Kansas City Royals':'KC','Los Angeles Angels':'LAA','Los Angeles Dodgers':'LAD','Miami Marlins':'MIA','Milwaukee Brewers':'MIL','Minnesota Twins':'MIN','New York Mets':'NYM','New York Yankees':'NYY','Athletics':'ATH','Oakland Athletics':'ATH','Philadelphia Phillies':'PHI','Pittsburgh Pirates':'PIT','San Diego Padres':'SD','San Francisco Giants':'SF','Seattle Mariners':'SEA','St. Louis Cardinals':'STL','Tampa Bay Rays':'TB','Texas Rangers':'TEX','Toronto Blue Jays':'TOR','Washington Nationals':'WSH'};
+function abbr(name) { return ABBRS[name] || name?.split(' ').pop().substring(0,3).toUpperCase() || '???'; }
+
+function renderScheduled(app, game) {
+  const { az, opp, isHome } = getTeamInfo(game);
+  const loc = isHome ? 'vs' : '@';
+  const oppName = opp.team.name;
+  const oppAbbr = abbr(oppName);
+  const time = fmt(game.gameDate);
+  const venue = game.venue?.name || '';
+
+  app.innerHTML = `
+    <div class="scheduled-card" style="margin-top:16px">
+      <div class="next-label">Today's Game</div>
+      <div class="next-matchup"><span class="az">AZ</span> ${loc} ${oppAbbr}</div>
+      <div class="next-time">${time}${venue ? ' · ' + venue : ''}</div>
+      <p class="sched-tip" style="margin-top:16px">Game data will appear once the first pitch is thrown.</p>
+    </div>
+  `;
+}
+
+async function renderNoGame(app) {
+  // Find next game
+  try {
+    const future = new Date();
+    future.setDate(future.getDate() + 1);
+    const end = new Date();
+    end.setDate(end.getDate() + 7);
+    const res = await fetch(`${MLB_BASE}/schedule?sportId=1&teamId=${DBACKS_ID}&startDate=${future.toISOString().split('T')[0]}&endDate=${end.toISOString().split('T')[0]}`);
+    const data = await res.json();
+    const nextGame = data.dates?.[0]?.games?.[0];
+
+    if (nextGame) {
+      const { az, opp, isHome } = getTeamInfo(nextGame);
+      const loc = isHome ? 'vs' : '@';
+      const oppAbbr = abbr(opp.team.name);
+      app.innerHTML = `
+        <div class="next-game" style="margin-top:16px">
+          <div class="next-label">No Game Today · Next Up</div>
+          <div class="next-matchup"><span class="az">AZ</span> ${loc} ${oppAbbr}</div>
+          <div class="next-time">${fmtDate(nextGame.gameDate)} · ${fmt(nextGame.gameDate)}</div>
+        </div>
+      `;
+    } else {
+      app.innerHTML = `<div class="state-msg">No games scheduled.</div>`;
+    }
+  } catch(e) {
+    app.innerHTML = `<div class="state-msg">No game today.</div>`;
+  }
+}
+
+async function renderGame(app, game) {
+  const gamePk = game.gamePk;
+
+  // Fetch full box score
+  const [boxRes, lineRes] = await Promise.all([
+    fetch(`${MLB_BASE}/game/${gamePk}/boxscore`),
+    fetch(`${MLB_BASE}/game/${gamePk}/linescore`)
+  ]);
+  const box = await boxRes.json();
+  const line = await lineRes.json();
+
+  const { az, opp, isHome } = getTeamInfo(game);
+  const azSide = isHome ? 'home' : 'away';
+  const oppSide = isHome ? 'away' : 'home';
+
+  const azScore = az.score ?? 0;
+  const oppScore = opp.score ?? 0;
+  const azAbbr = abbr(az.team.name);
+  const oppAbbr = abbr(opp.team.name);
+  const azName = az.team.name;
+  const oppName = opp.team.name;
+
+  const isFinal = game.status.abstractGameState === 'Final';
+  const isLive = game.status.abstractGameState === 'Live';
+
+  // Linescore innings
+  const innings = line.innings || [];
+  const currentInn = line.currentInning || innings.length;
+  const isTop = line.isTopInning;
+  const outs = line.outs ?? 0;
+
+  // Runners
+  const offense = line.offense || {};
+  const first = !!offense.first;
+  const second = !!offense.second;
+  const third = !!offense.third;
+
+  // Pitcher / batter
+  const pitcher = isLive ? (isTop ? box.teams[azSide]?.pitchers : box.teams[oppSide]?.pitchers) : null;
+  const batter = offense.batter?.fullName || null;
+  const currentPitcher = isLive ? (isTop
+    ? box.teams[azSide]?.players?.['ID' + line.defense?.pitcher?.id]?.person?.fullName
+    : box.teams[oppSide]?.players?.['ID' + line.defense?.pitcher?.id]?.person?.fullName) : null;
+
+  // Defense/offense for pitcher
+  const defPitcherId = line.defense?.pitcher?.id;
+  const offBatterId = line.offense?.batter?.id;
+
+  let pitcherName = '—';
+  let batterName = '—';
+
+  if (defPitcherId) {
+    const defSide = isTop ? azSide : oppSide;
+    const pitcherData = box.teams[defSide]?.players?.['ID' + defPitcherId];
+    pitcherName = pitcherData?.person?.fullName || '—';
+  }
+  if (offBatterId) {
+    const offSide = isTop ? oppSide : azSide;
+    const batterData = box.teams[offSide]?.players?.['ID' + offBatterId];
+    batterName = batterData?.person?.fullName || '—';
+  }
+
+  // Status string
+  let statusStr = '';
+  let showLiveDot = false;
+  if (isFinal) {
+    statusStr = 'FINAL';
+  } else if (isLive) {
+    const half = isTop ? 'TOP' : 'BOT';
+    statusStr = `${half} ${ordinal(currentInn)}`;
+    showLiveDot = true;
+  } else {
+    statusStr = fmt(game.gameDate);
+  }
+
+  // Build linescore rows
+  const maxInn = Math.max(9, innings.length);
+  let azCells = '';
+  let oppCells = '';
+  let headers = '<th class="team-col">TEAM</th>';
+  for (let i = 1; i <= maxInn; i++) {
+    headers += `<th class="${i === currentInn && isLive ? 'current-inn' : ''}">${i}</th>`;
+    const inn = innings[i - 1];
+    const azRuns = inn ? (azSide === 'home' ? inn.home?.runs : inn.away?.runs) : '';
+    const oppRuns = inn ? (azSide === 'home' ? inn.away?.runs : inn.home?.runs) : '';
+    const highlight = i === currentInn && isLive ? 'current-inn' : '';
+    azCells += `<td class="${highlight}">${azRuns !== undefined && azRuns !== null ? azRuns : (i < currentInn ? '0' : '')}</td>`;
+    oppCells += `<td class="${highlight}">${oppRuns !== undefined && oppRuns !== null ? oppRuns : (i < currentInn ? '0' : '')}</td>`;
+  }
+  const azR = box.teams[azSide]?.teamStats?.batting?.runs ?? azScore;
+  const azH = box.teams[azSide]?.teamStats?.batting?.hits ?? '—';
+  const azE = box.teams[azSide]?.teamStats?.fielding?.errors ?? '—';
+  const oppR = box.teams[oppSide]?.teamStats?.batting?.runs ?? oppScore;
+  const oppH = box.teams[oppSide]?.teamStats?.batting?.hits ?? '—';
+  const oppE = box.teams[oppSide]?.teamStats?.fielding?.errors ?? '—';
+
+  headers += '<th class="total-col">R</th><th>H</th><th>E</th>';
+  azCells += `<td class="total-col">${azR}</td><td>${azH}</td><td>${azE}</td>`;
+  oppCells += `<td class="total-col">${oppR}</td><td>${oppH}</td><td>${oppE}</td>`;
+
+  // Scoring plays
+  const scoringPlays = game.scoringPlays || [];
+  let playsHTML = '';
+
+  if (scoringPlays.length > 0) {
+    // Need to fetch play-by-play
+    try {
+      const playsRes = await fetch(`${MLB_BASE}/game/${gamePk}/playByPlay`);
+      const playsData = await playsRes.json();
+      const allPlays = playsData.allPlays || [];
+
+      scoringPlays.forEach(idx => {
+        const play = allPlays[idx];
+        if (!play) return;
+        const inn = play.about?.inning;
+        const half = play.about?.halfInning === 'top' ? 'TOP' : 'BOT';
+        const desc = play.result?.description || '—';
+        const awayScore = play.result?.awayScore ?? 0;
+        const homeScore = play.result?.homeScore ?? 0;
+        const azScorePlay = azSide === 'home' ? homeScore : awayScore;
+        const oppScorePlay = azSide === 'home' ? awayScore : homeScore;
+        const scoreStr = azScorePlay > oppScorePlay
+          ? `<span style="color:var(--sand)">${azAbbr} ${azScorePlay}</span>–${oppScorePlay}`
+          : azScorePlay < oppScorePlay
+            ? `${azAbbr} ${azScorePlay}–<span style="color:var(--muted)">${oppScorePlay}</span>`
+            : `${azScorePlay}–${oppScorePlay}`;
+
+        playsHTML += `
+          <div class="play-card">
+            <div class="play-inn">${inn}</div>
+            <div class="play-body">
+              <div class="play-half">${half} · ${ordinal(inn)}</div>
+              <div class="play-desc">${desc}</div>
+            </div>
+            <div class="play-score">${scoreStr}</div>
+          </div>
+        `;
+      });
+    } catch(e) {
+      playsHTML = '<div class="state-msg" style="padding:20px">Scoring plays unavailable.</div>';
+    }
+  } else {
+    playsHTML = `<div style="padding:16px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:center">No scoring plays yet.</div>`;
+  }
+
+  // Outs display
+  let outsHTML = '';
+  for (let i = 0; i < 3; i++) {
+    outsHTML += `<div class="out-dot ${i < outs ? 'active' : ''}"></div>`;
+  }
+
+  const azWinning = azScore > oppScore;
+  const oppWinning = oppScore > azScore;
+
+  app.innerHTML = `
+    <div class="score-card" style="margin-top:16px">
+      <div class="game-status-bar">
+        <span>${showLiveDot ? '<span class="live-dot"></span>' : ''}${statusStr}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.6)">${oppName}</span>
+      </div>
+
+      <div class="teams-row">
+        <div class="team-block away">
+          <div class="team-abbr az">AZ</div>
+          <div class="team-name">Diamondbacks</div>
+        </div>
+        <div class="score-center">
+          <div class="score-display">
+            <span class="${azWinning ? 'winning' : ''}">${azScore}</span>–<span class="${oppWinning ? 'winning' : ''}">${oppScore}</span>
+          </div>
+          <div class="inning-label">${azAbbr} vs ${oppAbbr}</div>
+        </div>
+        <div class="team-block home">
+          <div class="team-abbr opp">${oppAbbr}</div>
+          <div class="team-name">${oppName}</div>
+        </div>
+      </div>
+
+      ${isLive ? `
+      <div class="situation">
+        <div class="sit-block">
+          <div class="sit-label">On Base</div>
+          <div class="bases-diamond">
+            <div class="base base-second ${second ? 'on' : ''}"></div>
+            <div class="base base-third ${third ? 'on' : ''}"></div>
+            <div class="base base-first ${first ? 'on' : ''}"></div>
+          </div>
+        </div>
+        <div class="sit-block">
+          <div class="sit-label">Outs</div>
+          <div class="outs-dots">${outsHTML}</div>
+        </div>
+        <div class="sit-block">
+          <div class="sit-label">Half</div>
+          <div class="sit-value">${isTop ? '▲' : '▼'} ${ordinal(currentInn)}</div>
+        </div>
+      </div>
+      <div class="matchup">
+        <div class="matchup-item">
+          <div class="matchup-label">At Bat</div>
+          <div class="matchup-name">${batterName}</div>
+        </div>
+        <div class="matchup-item" style="text-align:right">
+          <div class="matchup-label">Pitching</div>
+          <div class="matchup-name">${pitcherName}</div>
+        </div>
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="section-header">LINE SCORE</div>
+    <div class="linescore-wrap">
+      <div class="linescore-scroll">
+        <table class="linescore">
+          <thead><tr>${headers}</tr></thead>
+          <tbody>
+            <tr class="az-row">
+              <td class="team-col">AZ</td>${azCells}
+            </tr>
+            <tr>
+              <td class="team-col" style="color:var(--muted)">${oppAbbr}</td>${oppCells}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-header">SCORING PLAYS</div>
+    <div class="plays-list">${playsHTML}</div>
+  `;
+}
+
+loadData();
+</script>
+</body>
+</html>
