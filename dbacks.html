@@ -701,20 +701,16 @@ async function renderGame(app, game) {
   azCells += `<td class="total-col">${azR}</td><td>${azH}</td><td>${azE}</td>`;
   oppCells += `<td class="total-col">${oppR}</td><td>${oppH}</td><td>${oppE}</td>`;
 
-  // Scoring plays
-  const scoringPlays = game.scoringPlays || [];
+  // Scoring plays - fetch directly from playByPlay
   let playsHTML = '';
+  try {
+    const playsRes = await fetch(`${MLB_BASE}/game/${gamePk}/playByPlay`);
+    const playsData = await playsRes.json();
+    const allPlays = playsData.allPlays || [];
+    const scoringPlays = allPlays.filter(p => p.about?.isScoringPlay === true);
 
-  if (scoringPlays.length > 0) {
-    // Need to fetch play-by-play
-    try {
-      const playsRes = await fetch(`${MLB_BASE}/game/${gamePk}/playByPlay`);
-      const playsData = await playsRes.json();
-      const allPlays = playsData.allPlays || [];
-
-      scoringPlays.forEach(idx => {
-        const play = allPlays[idx];
-        if (!play) return;
+    if (scoringPlays.length > 0) {
+      scoringPlays.forEach(play => {
         const inn = play.about?.inning;
         const half = play.about?.halfInning === 'top' ? 'TOP' : 'BOT';
         const desc = play.result?.description || '—';
@@ -739,11 +735,11 @@ async function renderGame(app, game) {
           </div>
         `;
       });
-    } catch(e) {
-      playsHTML = '<div class="state-msg" style="padding:20px">Scoring plays unavailable.</div>';
+    } else {
+      playsHTML = `<div style="padding:16px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:center">No scoring plays yet.</div>`;
     }
-  } else {
-    playsHTML = `<div style="padding:16px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:center">No scoring plays yet.</div>`;
+  } catch(e) {
+    playsHTML = '<div class="state-msg" style="padding:20px">Scoring plays unavailable.</div>';
   }
 
   // Outs display
